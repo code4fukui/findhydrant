@@ -12,7 +12,7 @@
 <script src="lib/gmap.js"></script>
 <script src="lib/odp.js"></script>
 <script>"use strict";
-
+			
 var DEFAULT_ORG;
 
 var watchid;
@@ -36,8 +36,22 @@ http://fukuno.jig.jp/app/odp/datalist.html
 */
 var TYPE = "http://purl.org/jrrk#Hydrant";
 
+var getIconHydrant = function(data) {
+	var ICONS = {
+		"http://odp.jig.jp/res/classified/消火栓": "img/icon_hydrant2.png",
+		"http://odp.jig.jp/res/classified/防火水槽": "img/icon_hydrant1.png",
+		"http://odp.jig.jp/res/classified/プール": "img/icon_hydrant3.png",
+		// その他水利
+	};
+	if (data.classified) {
+		var icon = ICONS[decodeURIComponent(data.classified)];
+		if (icon)
+			return icon;
+	}
+	return "img/icon_hydrant.png";
+};
 var icons = {
-	"http://purl.org/jrrk#Hydrant": { icon: "img/icon_hydrant.png", name: "消火栓" }
+	"http://purl.org/jrrk#Hydrant": { icon: "img/icon_hydrant.png", name: "消火栓", getIcon: getIconHydrant }
 };
 
 /*
@@ -203,21 +217,21 @@ var loadRefuge = function(ll, funcnext) {
 		"prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
 		"prefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>\n" +
 		"prefix jrrk: <http://purl.org/jrrk#>\n" +
-		"select ?s ?name ?nameen ?lat ?lng ?plugs ?hours ?coverage ?graph {\n" + 
+		"prefix odp: <http://odp.jig.jp/odp/1.0#>\n" +
+		"select ?s ?name ?nameen ?lat ?lng ?classified ?graph {\n" + 
 			"graph ?graph {\n" + 
 				"?s rdf:type <" + TYPE + ">;\n" +
-			"rdfs:label ?name;\n" +
+				"rdfs:label ?name;\n" +
+				"odp:classified ?classified;\n" + 
 				"geo:lat ?lat;\n" +
 				"geo:long ?lng.\n" +
-				"optional { ?s jrrk:openingHours ?hours. }\n" +
-				"optional { ?s jrrk:hasPlugs ?plugs. }\n" +
-				"optional { ?s jrrk:coverage ?coverage. }\n" +
 			"optional { ?s rdfs:label ?nameen. filter(lang(?nameen) = 'en') }\n" +
 
 		//		"filter(?lat < " + latmax + " && ?lat > " + latmin + " && ?lng < " + lngmax + " && ?lng > " + lngmin + ")\n" +
 			"filter(lang(?name) = 'ja')\n" +
 			"}\n" +
 		"}";
+//	prompt(q);
 	querySPARQL(q, function(data) {
 //		dump(data);
 		var items = data.results.bindings;
@@ -332,6 +346,10 @@ var getContent = function(data) {
 //	s.push("[<a href='" + data.seealso + "' target=_blank>seeAlso</a>] [<a href=" + searchImage(getName(data)) + " target=_blank>img search</a>]</br>");
 /*	s.push(data.address + "<br>"); */
 	s.push("MAP <a href='" + mapurl + "' target=_blank>" + pos.lat() + "," + pos.lng() + "</a><br>");
+	if (data.classified)
+		s.push("種別：" + decodeURIComponent(data.classified) + "<br>");
+	if (data.s)
+		s.push("<a href='" + data.s + "' target=_blank>DATA on odp</a><br>");
 //	s.push("DATA <a href='" + data.url + "' target=_blank>" + data.url + "</a><br>");
 //	debug(data.graph);
 	if (data.graph.startsWith("http://odp.jig.jp/rdf/jp/fukui/sabae/")) {
@@ -344,8 +362,9 @@ var makeMarker = function(map, pos, data) {
 	var opb = [ "A", "ff3300" ];
 	var op = opb;
 	var icon = icons[data.type].icon
-	if (icons[data.type].getIcon)
+	if (icons[data.type].getIcon) {
 		icon = icons[data.type].getIcon(data);
+	}
 	return new google.maps.Marker({
 		position: pos,
 		map: map,
