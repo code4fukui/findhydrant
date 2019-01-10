@@ -339,7 +339,14 @@ var getContent = function(data) {
 	var s = [];
 	s.push("<div id='data'>");
 	
-	s.push("<div>" + trans(icons[data.type].name) + "</div>");
+	var nid = 0;
+	for (var i = 0; i < markers.length; i++) {
+		if (markers[i].data == data) {
+			nid = i + 1;
+			break;
+		}
+	}
+	s.push("<div>" + trans(icons[data.type].name) + " (" + nid + "/" + markers.length + ")</div>");
 	s.push("<div id='title'>" + getName(data) + "</div>");
 	if (data.coverage)
 		s.push("使用可能エリア: " + data.coverage + "<br>");
