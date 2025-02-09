@@ -1,28 +1,29 @@
-<!DOCTYPE html>
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <!-- (c)taisukef CC BY  http://fukuno.jig.jp/ -->
-<html>
-<head>
-<meta charset='utf-8'/>
 <title>findhydrant 消火栓を探す - odp</title>
 <meta property="og:image" content="ss.jpg">
-<link rel="apple-touch-icon" href="img/icon_hydrant.png"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, target-densitydpi=medium-dpi">
+<link rel="apple-touch-icon" href="img/icon_hydrant.png">
+<link rel="icon" href="img/icon_hydrant.png">
 <meta name="format-detection" content="telephone=no">
-<script src="lib/fukuno.js"></script>
-<script src="lib/gmap.js"></script>
-<script src="lib/odp.js"></script>
-<script>"use strict";
-			
-var DEFAULT_ORG;
+<script type="module">
+import { querySPARQL } from "./lib/odp.js";
+import { getLanguage } from "./lib/getLanguage.js";
+import { get } from "./lib/get.js";
+import { LeafletGSI } from "https://js.sabae.cc/LeafletGSI.js";
 
-var watchid;
-var map;
-var supportgps = typeof navigator.geolocation != 'undefined';
-
-var getLL = function(lat, lng) {
-	return new google.maps.LatLng(lat, lng);
+const getLL = function(lat, lng) {
+	return [lat, lng];
 };
-var showNearest = function() {
+
+//	DEFAULT_ORG = new google.maps.LatLng(40.392834, -3.723986); // madrid
+const DEFAULT_ORG = new getLL(35.943352, 136.188597); // sabae st.
+//	DEFAULT_ORG = new google.maps.LatLng(34.834509, 138.177419); // shimada city
+//	DEFAULT_ORG = new google.maps.LatLng(35.691180, 139.701038); // shinjuku st. east
+
+let watchid;
+const supportgps = typeof navigator.geolocation != 'undefined';
+
+const showNearest = function() {
 	if (supportgps)
 		dir();
 	else
@@ -34,23 +35,23 @@ var showNearest = function() {
 http://taisukef.github.io/SPARQLKnocker/
 http://fukuno.jig.jp/app/odp/datalist.html
 */
-var TYPE = "http://purl.org/jrrk#Hydrant";
+const TYPE = "http://purl.org/jrrk#Hydrant";
 
-var getIconHydrant = function(data) {
-	var ICONS = {
+const getIconHydrant = function(data) {
+	const ICONS = {
 		"http://odp.jig.jp/res/classified/消火栓": "img/icon_hydrant.png",
 		"http://odp.jig.jp/res/classified/防火水槽": "img/icon_hydrant2.png",
 		"http://odp.jig.jp/res/classified/プール": "img/icon_hydrant3.png",
 		"http://odp.jig.jp/res/classified/その他水利": "img/icon_hydrant1.png",
 	};
 	if (data.classified) {
-		var icon = ICONS[decodeURIComponent(data.classified)];
+		const icon = ICONS[decodeURIComponent(data.classified)];
 		if (icon)
 			return icon;
 	}
 	return "img/icon_hydrant.png";
 };
-var icons = {
+const icons = {
 	"http://purl.org/jrrk#Hydrant": { icon: "img/icon_hydrant.png", name: "消火栓", getIcon: getIconHydrant }
 };
 
@@ -58,7 +59,7 @@ var icons = {
 translated by
 http://webtranslation.paralink.com/translator/default.asp
 */
-var CAP = {
+const CAP = {
 	en: [ "nearest", "find a refuge", "Monument" ],
 	ja: [ "最短", "避難所を探す", "モニュメント" ],
 	es: [ "Más corta", "refugio", "monumento" ],
@@ -70,10 +71,10 @@ var CAP = {
 	tl: [ "kalapitan", "makahanap ng isang magkubli", "bantayog" ], // タガログ
 	fa: [ "نزديكترين", "نزديكترين", "اثر تاریخی" ], // ペルシャ語
 };
-var trans = function(s) {
-	for (var i = 0; i < CAP.en.length; i++) {
+const trans = function(s) {
+	for (let i = 0; i < CAP.en.length; i++) {
 		if (s == CAP.en[i]) {
-			var lang = getLanguage2();
+			const lang = getLanguage2();
 			if (CAP[lang] == null)
 				lang = "en";
 			return CAP[lang][i];
@@ -81,9 +82,9 @@ var trans = function(s) {
 	}
 	return s;
 };
-var lang = function(s, loadapi) {
+const lang = function(s, loadapi) {
 //alert(s);
-	var v = CAP[s];
+	const v = CAP[s];
 	if (v == null)
 		v = CAP["en"];
 	get("btnf").textContent = trans(get("btnf").textContent);
@@ -97,28 +98,10 @@ var lang = function(s, loadapi) {
 window.onload = function() {
 	init();
 };
-var init = function() {
-	if (google == null || google.maps == null || google.maps.LatLng == null) {
-		setTimeout(init, 100);
-		return;
-	}
-
+let map;
+const init = async () => {
 	lang(getLanguage2(), false);
-
-//	DEFAULT_ORG = new google.maps.LatLng(40.392834, -3.723986); // madrid
-	DEFAULT_ORG = new google.maps.LatLng(35.943352, 136.188597); // sabae st.
-//	DEFAULT_ORG = new google.maps.LatLng(34.834509, 138.177419); // shimada city
-//	DEFAULT_ORG = new google.maps.LatLng(35.691180, 139.701038); // shinjuku st. east
-			
-
-	
-	map = new google.maps.Map(get("map"), {
-		center: new google.maps.LatLng(36.208823, 138.251953),
-		zoom: 5,
-		mapTypeId: google.maps.MapTypeId.ROADMAP
-//		mapTypeId: google.maps.MapTypeId.HYBRID
-	});
-	
+	map = await LeafletGSI.initMap(divmap);
 	
 	get('btnp').onclick = function() {
 		if (dislist == null)
@@ -145,74 +128,45 @@ var init = function() {
 		navigate(dislist[currentdislist].marker);
 	};
 	
-	markers = [];
-	bounds = new google.maps.LatLngBounds();
+	markers.length = 0;
+	bounds.length = 0;
 	
 	showNearest();
 };
-var markers;
-var bounds;
-var makeMarkerItem = function(d) {
-	var lat = d.latitude || d.lat;
-	var lng = d.longitude || d.lng;
-	var ll = new google.maps.LatLng(lat, lng);
+const markers = [];
+const bounds = [];
+const makeMarkerItem = function(d) {
+	const lat = d.latitude || d.lat;
+	const lng = d.longitude || d.lng;
+	const ll = getLL(lat, lng);
 	d.pos = ll;
-	bounds.extend(ll);
-	var marker = makeMarker(map, ll, d);
+	bounds.push(ll);
+	const marker = makeMarker(map, ll, d);
 	markers.push(marker);
 	marker.data = d;
-	google.maps.event.addListener(marker, "click", function(e) {
-		openInfo(this);
+	marker.bindPopup(getContent(marker.data));
+	marker.on("click", function(e) {
+		marker.openPopup();
 	});
-	
-	/*
-	var div = create('div');
-	div.textContent = d.name;
-	div.data = d;
-	div.marker = marker;
-	div.onclick = function(e) {
-//		selected(e.srcElement);
-		var d = this.data;
-		var lat = d.latitude || d.lat;
-		var lng = d.longitude || d.lng;
-		map.setCenter(new google.maps.LatLng(lat, lng));
-		map.setZoom(17);
-		openInfo(e.srcElement.marker);
-	};
-	get('list').appendChild(div);
-	*/
 };
-var clearMarkers = function() {
-	for (var i = 0; i < markers.length; i++) {
+const clearMarkers = function() {
+	for (let i = 0; i < markers.length; i++) {
 		markers[i].setMap(null);
 	}
 };
 
-var loadRefuge = function(ll, funcnext) {
-//	currentpos = ll = getLL(35.903508,136.168782);
-
+const loadRefuge = function(ll, funcnext) {
 	clearMarkers();
+
+	const dll = 0.01;
+	const lat = ll[0];
+	const lng = ll[1];
+	const latmin = lat - dll;
+	const latmax = lat + dll;
+	const lngmin = lng - dll;
+	const lngmax = lng + dll;
 	
-	// google.maps.event.addListener(map, "idle", function() {
-	/*
-	var b = map.getBounds();
-	if (!b)
-		return;
-	var latmin = b.getNorthEast().lat();
-	var lngmin = b.getNorthEast().lng();
-	var latmax = b.getSouthWest().lat();
-	var lngmax = b.getSouthWest().lng();
-	alert(latmin + " " + lngmin + " " + latmax + " " + lngmax);
-	*/
-	var dll = 0.01;
-	var lat = ll.lat();
-	var lng = ll.lng();
-	var latmin = lat - dll;
-	var latmax = lat + dll;
-	var lngmin = lng - dll;
-	var lngmax = lng + dll;
-	
-	var q =
+	const q =
 		"prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
 		"prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n" +
 		"prefix geo: <http://www.w3.org/2003/01/geo/wgs84_pos#>\n" +
@@ -237,35 +191,35 @@ var loadRefuge = function(ll, funcnext) {
 //	prompt(q);
 	querySPARQL(q, function(data) {
 //		dump(data);
-		var items = data.results.bindings;
+		const items = data.results.bindings;
 //		alert(items.length); // 全データ3894 全種データ集まっている2568 2016.12.9
 		
-		bounds = new google.maps.LatLngBounds();
-		for (var i = 0; i < items.length; i++) {
-			var it = items[i];
-			var d = {};
+		bounds.length = 0;
+		for (let i = 0; i < items.length; i++) {
+			const it = items[i];
+			const d = {};
 			d.type = TYPE;
-			for (var n in it) {
+			for (const n in it) {
 				d[n] = it[n].value;
 			}
 			makeMarkerItem(d);
 		}
-		if (data.length > 0)
-			map.fitBounds(bounds);
+		if (data.length > 0) {
+			map.fitBounds(L.latLngBounds(bounds));
+		}
 		
 		funcnext();
 	});
 };
 
-var getNearPosition = function(lat, lng) {
-	if (markers == null)
-		return null;
-	var len = 100000000; // 100,000,000m
-	var n = -1;
-	for (var i = 0; i < markers.length; i++) {
-		var m = markers[i];
-		var p = m.getPosition();
-		var d = getDistance(lat, lng, p.lat(), p.lng());
+const getNearPosition = function(lat, lng) {
+	if (markers.length == 0) return null;
+	const len = 100000000; // 100,000,000m
+	const n = -1;
+	for (let i = 0; i < markers.length; i++) {
+		const m = markers[i];
+		const p = m.getLatLng();
+		const d = getDistance(lat, lng, p.lat, p.lng);
 		if (d < len) {
 			len = d;
 			n = i;
@@ -276,23 +230,21 @@ var getNearPosition = function(lat, lng) {
 	get('info').innerHTML = getContent(markers[n].data);
 	return markers[n].getPosition();
 };
-var dislist;
-var currentdislist;
-var calcDistanceList = function(lat, lng) {
-	if (markers == null)
-		return false;
-	var len = 100000000; // 100,000,000m
-	dislist = [];
-	for (var i = 0; i < markers.length; i++) {
-		var m = markers[i];
-		var p = m.getPosition();
-		var d = getDistance(lat, lng, p.lat(), p.lng());
+const dislist = [];
+let currentdislist = 0;
+const calcDistanceList = function(lat, lng) {
+	if (markers.length == 0) return false;
+	dislist.length = 0;
+	for (let i = 0; i < markers.length; i++) {
+		const m = markers[i];
+		const p = m.getLatLng();
+		const d = getDistance(lat, lng, p.lat, p.lng);
 		dislist[i] = { marker: m, distance: d };
 	}
-	for (var i = 0; i < dislist.length - 1; i++) {
-		for (var j = i; j < dislist.length; j++) {
+	for (let i = 0; i < dislist.length - 1; i++) {
+		for (let j = i; j < dislist.length; j++) {
 			if (dislist[i].distance > dislist[j].distance) {
-				var tmp = dislist[i];
+				const tmp = dislist[i];
 				dislist[i] = dislist[j];
 				dislist[j] = tmp;
 			}
@@ -300,47 +252,44 @@ var calcDistanceList = function(lat, lng) {
 	}
 	return true;
 };
-var navigate = function(marker) {
+const navigate = function(marker) {
 	get('info').innerHTML = getContent(marker.data);
-	directions(currentpos, marker.getPosition());
+	//directions(currentpos, marker.getLatLng);
 	openInfo(marker);
 };
-var getDistance = function(lat1, lng1, lat2, lng2) {
-	var dlat = (lat2 - lat1) * Math.PI / 180;
-	var dlng = (lng2 - lng1) * Math.PI / 180;
-	var a = Math.sin(dlat / 2) * Math.sin(dlat / 2)
+const getDistance = function(lat1, lng1, lat2, lng2) {
+	const dlat = (lat2 - lat1) * Math.PI / 180;
+	const dlng = (lng2 - lng1) * Math.PI / 180;
+	const a = Math.sin(dlat / 2) * Math.sin(dlat / 2)
 		+ Math.cos(lat1 * Math.PI / 180)
 		* Math.cos(lat2 * Math.PI / 180)
 		* Math.sin(dlng / 2) * Math.sin(dlng / 2);
 	return 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 6371; // 6371 = R of the Earth in km
 };
-var jptel = function(tel) {
+const jptel = function(tel) {
 	if (tel.startsWith("+81-")) {
 		return "0" + tel.substring(4);
 	}
 	return tel;
 };
-var getName = function(data) {
-	var lang = getLanguage2();
-	var s = data.name;
+const getName = function(data) {
+	const lang = getLanguage2();
+	const s = data.name;
 	if (lang != "ja" && lang != "zh" && data.nameen != null && data.nameen != "null")
 		s = data.nameen;
-	var n = s.lastIndexOf("@@");
+	const n = s.lastIndexOf("@@");
 	if (n > 0)
 		s = s.substring(0, n);
 	return s;
 };
-var searchImage = function(name) {
-	return "https://www.google.co.jp/search?q=image&q=" + encodeURIComponent(name);
-};
-var getContent = function(data) {
-	var pos = data.pos;
-	var mapurl = "http://maps.google.co.jp/maps?ll=" + pos.lat() + "," + pos.lng();
-	var s = [];
+const getContent = function(data) {
+	const pos = data.pos;
+	const mapurl = "http://maps.google.co.jp/maps?ll=" + pos[0] + "," + pos[1];
+	const s = [];
 	s.push("<div id='data'>");
 	
-	var nid = 0;
-	for (var i = 0; i < markers.length; i++) {
+	let nid = 0;
+	for (let i = 0; i < markers.length; i++) {
 		if (markers[i].data == data) {
 			nid = i + 1;
 			break;
@@ -354,9 +303,7 @@ var getContent = function(data) {
 		s.push("使用可能時間: " + data.hours + "<br>");
 	if (data.plugs)
 		s.push("電源: " + data.plugs + "<br>");
-//	s.push("[<a href='" + data.seealso + "' target=_blank>seeAlso</a>] [<a href=" + searchImage(getName(data)) + " target=_blank>img search</a>]</br>");
-/*	s.push(data.address + "<br>"); */
-	s.push("MAP <a href='" + mapurl + "' target=_blank>" + pos.lat() + "," + pos.lng() + "</a><br>");
+	s.push("MAP <a href='" + mapurl + "' target=_blank>" + pos[0] + "," + pos[1] + "</a><br>");
 //	if (data.classified)
 //		s.push("種別：" + decodeURIComponent(data.classified) + "<br>");
 	if (data.address)
@@ -375,67 +322,42 @@ var getContent = function(data) {
 	s.push("</div>");
 	return s.join('');
 };
-var makeMarker = function(map, pos, data) {
-	var opb = [ "A", "ff3300" ];
-	var op = opb;
-	var icon = icons[data.type].icon
+const iconcache = {};
+const getIcon = (icon) => {
+	const res = iconcache[icon];
+	if (res) return res;
+	const iconw = 48;
+	const iconh = 48;
+	const iconopt = L.icon({
+		iconUrl: icon,
+		iconRetilaUrl: icon,
+		iconSize: [iconw, iconh],
+		iconAnchor: [iconw / 2, iconh / 2],
+		popupAnchor: [0, -iconh / 2],
+	});
+	iconcache[icon] = iconopt;
+	return iconopt;
+};
+const makeMarker = function(map, pos, data) {
+	const opb = [ "A", "ff3300" ];
+	const op = opb;
+	let icon = icons[data.type].icon
 	if (icons[data.type].getIcon) {
 		icon = icons[data.type].getIcon(data);
 	}
-	return new google.maps.Marker({
-		position: pos,
-		map: map,
-		draggable: false,
-//		animation: google.maps.Animation.DROP,
-//		icon: 'http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=' + op[0] + '|' + op[1] + '|000000'
-		icon: new google.maps.MarkerImage(
-			//'icon/icon-exit2.png',
-			icon,
-			new google.maps.Size(128, 128),
-			new google.maps.Point(0, 0),
-			new google.maps.Point(24, 24),
-			new google.maps.Size(48, 48)
-		)
-/*
-		icon: new google.maps.MarkerImage(
-			'icon-heart.png',
-			new google.maps.Size(32, 32),
-			new google.maps.Point(0, 0),
-			new google.maps.Point(16, 16)
-		)
-*/
-	});
+	const iconopt = getIcon(icon);
+	const marker = L.marker(pos, {
+    icon: iconopt,
+  });
+	marker.addTo(map);
+	return marker;
 };
-var openInfo = function(marker) {
-	if (map.info != null) {
-		map.info.close();
-		if (map.info.marker == marker) {
-			map.info = null;
-			return;
-		}
-	}
-	map.info = new google.maps.InfoWindow({
-		content: getContent(marker.data),
-//		position: marker.pos,
-		pixelOffset: new google.maps.Size(-40, 20)
-	});
-	google.maps.event.addListener(map.info, "closeclick", function() {
-		map.info = null;
-	});
-	map.info.marker = marker;
-	map.info.open(map, marker);
-//	map.info.open(map);
+const openInfo = function(marker) {
+	marker.openPopup();
 };
-var currentpos;
-var findNear = function() {
-	/*
-	var near = getNearPosition(currentpos.lat(), currentpos.lng());
-	if (near == null)
-		setTimeout(findNear, 100);
-	else
-		directions(currentpos, near);
-	*/
-	var b = calcDistanceList(currentpos.lat(), currentpos.lng());
+let currentpos;
+const findNear = function() {
+	const b = calcDistanceList(currentpos[0], currentpos[1]);
 	if (!b)
 		setTimeout(findNear, 100);
 	else {
@@ -445,21 +367,15 @@ var findNear = function() {
 		}
 	}
 };
-var setPosition = function(ll, accuracy) {
-	map.setCenter(ll);
-	map.setZoom(19);
+const setPosition = function(ll, accuracy) {
+	map.setView(ll, 19);
 	
-	new google.maps.Circle({
-		map: map,
-		center: ll,
+	new L.Circle(ll, {
 		fillColor: "#3333ff",
 		fillOpacity: .2,
 		strokeWeight: 0,
-//		strokeColor: "#3333ff",
-//		strokeOpacity: 1,
-//		strokeWeight: 2,
 		radius: accuracy
-	});
+	}).addTo(map);
 	
 	currentpos = ll;
 	
@@ -467,16 +383,16 @@ var setPosition = function(ll, accuracy) {
 		findNear();
 	});
 }
-var dir = function() {
+const dir = function() {
 	if (watchid != null) {
 		navigator.geolocation.clearWatch(watchid);
 	}
 	watchid = navigator.geolocation.watchPosition(function(p) {
 		navigator.geolocation.clearWatch(watchid);
 		watchid = null;
-		var lat = p.coords.latitude;
-		var lng = p.coords.longitude;
-		var ll = getLL(lat, lng);
+		const lat = p.coords.latitude;
+		const lng = p.coords.longitude;
+		const ll = getLL(lat, lng);
 		setPosition(ll, p.coords.accuracy);
 	}, function(e) {
 		setPosition(DEFAULT_ORG, 5);
@@ -486,45 +402,23 @@ var dir = function() {
 		enableHighAccuracy: 1
 	});
 };
-var directionsRenderer;
-var directions = function(org, dest) {
-	if (directionsRenderer != null) {
-		directionsRenderer.setMap(null);
-		directionsRenderer.setPanel(null);
-	}
-	directionsRenderer = new google.maps.DirectionsRenderer();
-	directionsRenderer.setMap(map);
-	directionsRenderer.setPanel(get('route'));
-	var dirs = new google.maps.DirectionsService();
-	var request = {
-		origin: org,
-		destination: dest,
-//		travelMode: google.maps.DirectionsTravelMode.WALKING,
-//		travelMode: google.maps.DirectionsTravelMode.BICYCLING,
-//		travelMode: google.maps.DirectionsTravelMode.DRIVING,
-		travelMode: google.maps.DirectionsTravelMode.TRANSIT,
-		unitSystem: google.maps.DirectionsUnitSystem.METRIC,
-		provideRouteAlternatives: false // another route
-	};
-	dirs.route(request, function(response, status) {
-		if (status == google.maps.DirectionsStatus.OK) {
-			directionsRenderer.setDirections(response);
-		} else {
-			get('route').textContent = "";
-		}
-	});
-}
 
-var getLanguage2 = function() {
-	var lang = getLanguage();
-	var hash = document.location.hash;
+const getLanguage2 = function() {
+	let lang = getLanguage();
+	const hash = document.location.hash;
 	if (hash.length > 2) {
 		lang = hash.substring(1);
 	}
 	return lang;
 };
-loadLocalAPI();
 
+document.body.querySelector(".langs").querySelectorAll("a").forEach(i => {
+	i.onclick = (e) => {
+		e.preventDefault();
+		const l = i.getAttribute("x-lang");
+		lang(l);
+	};
+});
 </script>
 <style>
 body {
@@ -534,7 +428,7 @@ body {
 	-webkit-text-size-adjust: none; /* for iPhone */
 	font-family: sans-serif;
 }
-#map {
+#divmap {
 	width: 100%;
 	height: 360px;
 }
@@ -598,7 +492,7 @@ body {
 <div id='main'>
 
 <div id='navi'>
-<div id='map'></div>
+<div id='divmap'></div>
 <button class='nbtn' id='btnp'>&lt;&lt;</button>
 <button class='nbtn' id='btnf'>nearest</button>
 <button class='nbtn' id='btnn'>&gt;&gt;</button>
@@ -611,16 +505,16 @@ body {
 </div>
 
 <div class="langs">
-<a href=javascript:lang("en")>English</a>,
-<a href=javascript:lang("es")>Spanish</a>,
-<a href=javascript:lang("tl")>Tagalog</a>,
-<a href=javascript:lang("pt")>Português</a>,
-<a href=javascript:lang("de")>Deutsch</a>,
-<a href=javascript:lang("ca")>català</a>,
-<a href=javascript:lang("fa")>فارسى‎</a>,
-<a href=javascript:lang("ko")>한국어</a>,
-<a href=javascript:lang("zh")>中国語</a>,
-<a href=javascript:lang("ja")>日本語</a>
+<a x-lang="en">English</a>,
+<a x-lang="es">Spanish</a>,
+<a x-lang="tl">Tagalog</a>,
+<a x-lang="pt">Português</a>,
+<a x-lang="de">Deutsch</a>,
+<a x-lang="ca">català</a>,
+<a x-lang="fa">فارسى‎</a>,
+<a x-lang="ko">한국어</a>,
+<a x-lang="zh">中国語</a>,
+<a x-lang="ja">日本語</a>
 </div>
 
 <div class="src">
