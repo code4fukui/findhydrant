@@ -1,5 +1,5 @@
 <!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-<!-- (c)taisukef CC BY  http://fukuno.jig.jp/ -->
+<!-- (c)taisukef CC BY  https://fukuno.jig.jp/ -->
 <title>findhydrant 消火栓を探す - odp</title>
 <meta property="og:image" content="ss.jpg">
 <link rel="apple-touch-icon" href="img/icon_hydrant.png">
@@ -32,8 +32,8 @@ const showNearest = function() {
 
 /* 
 5つ星オープンデータ探しに、SPARQLKnocker、datalist
-http://taisukef.github.io/SPARQLKnocker/
-http://fukuno.jig.jp/app/odp/datalist.html
+https://taisukef.github.io/SPARQLKnocker/
+https://fukuno.jig.jp/app/odp/datalist.html
 */
 const TYPE = "http://purl.org/jrrk#Hydrant";
 
@@ -284,7 +284,7 @@ const getName = function(data) {
 };
 const getContent = function(data) {
 	const pos = data.pos;
-	const mapurl = "http://maps.google.co.jp/maps?ll=" + pos[0] + "," + pos[1];
+	const mapurl = "https://maps.google.co.jp/maps?ll=" + pos[0] + "," + pos[1];
 	const s = [];
 	s.push("<div id='data'>");
 	
@@ -317,7 +317,7 @@ const getContent = function(data) {
 //	s.push("DATA <a href='" + data.url + "' target=_blank>" + data.url + "</a><br>");
 //	debug(data.graph);
 	if (data.graph.startsWith("http://odp.jig.jp/rdf/jp/fukui/sabae/")) {
-		s.push("※<a href=http://www.city.sabae.fukui.jp/pageview.html?id=10525 target=_blank>鯖江市公衆WiFi</a>: sabaewifi / sabae12345678");
+		s.push("※<a href=https://www.city.sabae.fukui.jp/pageview.html?id=10525 target=_blank>鯖江市公衆WiFi</a>: sabaewifi / sabae12345678");
 	}
 	s.push("</div>");
 	return s.join('');
@@ -518,8 +518,8 @@ body {
 </div>
 
 <div class="src">
-APP: <a href=http://creativecommons.org/licenses/by/4.0/ target=_blank>CC BY</a> <a href=http://fukuno.jig.jp/1494 target=_blank>Taisuke Fukuno / Create Everyday</a><br>
-SPARQL: <a href=http://sparql.odp.jig.jp/ target=_blank>odp</a> (代表データ <a href=https://ckan.odp.jig.jp/dataset/jp-fukui-sabae-200-odp>消火栓(福井県鯖江市) - データセット - オープンデータプラットフォーム | データカタログサイト</a>)<br>
+APP: <a href=https://creativecommons.org/licenses/by/4.0/ target=_blank>CC BY</a> <a href=https://fukuno.jig.jp/1494 target=_blank>Taisuke Fukuno / Create Everyday</a><br>
+SPARQL: <a href=https://sparql.odp.jig.jp/ target=_blank>odp</a> (代表データ <a href=https://ckan.odp.jig.jp/dataset/jp-fukui-sabae-200-odp>消火栓(福井県鯖江市) - データセット - オープンデータプラットフォーム | データカタログサイト</a>)<br>
 <a href=https://github.com/code4fukui/findhydrant/>ソースコード on GitHub</a><br>
 要望はこちら <a href=https://github.com/code4fukui/findhydrant/issues>Issues on GitHub</a><br>
 fork歓迎、プルリクエストもお気軽に！<br>
