@@ -285,6 +285,7 @@ const getName = function(data) {
 const getContent = function(data) {
 	const pos = data.pos;
 	const mapurl = "https://maps.google.co.jp/maps?ll=" + pos[0] + "," + pos[1];
+	const mapurl_street = "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" + pos[0] + "," + pos[1];
 	const s = [];
 	s.push("<div id='data'>");
 	
@@ -303,7 +304,8 @@ const getContent = function(data) {
 		s.push("使用可能時間: " + data.hours + "<br>");
 	if (data.plugs)
 		s.push("電源: " + data.plugs + "<br>");
-	s.push("MAP <a href='" + mapurl + "' target=_blank>" + pos[0] + "," + pos[1] + "</a><br>");
+	const f = s => parseFloat(s).toFixed(4);
+	s.push("MAP <a href='" + mapurl + "' target=_blank>" + f(pos[0]) + "," + f(pos[1]) + "</a> (<a href=" + mapurl_street + " target=_blank>ストリートビュー</a>)<br>");
 //	if (data.classified)
 //		s.push("種別：" + decodeURIComponent(data.classified) + "<br>");
 	if (data.address)
