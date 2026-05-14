@@ -6,7 +6,7 @@ A web app to find fire hydrants and other emergency water sources in Japan using
 
 ## Demo
 
-**Live App: https://code4fukui.github.io/findhydrant/**
+**Live App: https://github.com/code4fukui/findhydrant
 
 The interface displays a map with icons for various water sources. You can navigate through the nearest locations using the "Previous" and "Next" buttons.
 

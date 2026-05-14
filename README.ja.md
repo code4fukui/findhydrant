@@ -4,7 +4,7 @@
 
 ## デモ
 
-**ライブアプリ: https://code4fukui.github.io/findhydrant/**
+**ライブアプリ: https://github.com/code4fukui/findhydrant
 
 インターフェースには、さまざまな水利がアイコンで地図上に表示されます。「前へ」と「次へ」ボタンを使って、現在地から近い順に場所をナビゲートできます。
 
